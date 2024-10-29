@@ -19,9 +19,6 @@ export const DataTable = ({
   latestFetched,
 }: Props) => {
 
-  const { setError } = useContext(ErrorContext);
-  const { setLoading } = useContext(LoadingContext);
-
   return (
     <Box
       sx={{
@@ -62,7 +59,7 @@ export const DataTable = ({
           <TableBody>
             {
               reserveData.map((data: ReserveData) => {
-                const borrowRate = data?.variableBorrowRate ? (data?.variableBorrowRate * 100).toFixed(3) : 0
+                const borrowRate = data?.variableBorrowRate ? (Number(data?.variableBorrowRate) * 100).toFixed(3) : 0
                 return (
                   <TableRow
                     key={data.address}

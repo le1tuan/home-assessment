@@ -4,7 +4,7 @@ let provider: JsonRpcProvider | null = null;
 
 export async function connectProvider() {
   try {
-    const url = import.meta.env.VITE_RPC_URL
+    const url = (import.meta as any).env.VITE_RPC_URL
     provider = new JsonRpcProvider(url);
     return provider
   } catch (error) {
