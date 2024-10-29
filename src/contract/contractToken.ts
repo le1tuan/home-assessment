@@ -36,7 +36,6 @@ export async function getSymbol(contractToken: Contract) {
       if ((error?.message || '').indexOf("could not decode result data") === -1) {
         throw new Error(`Can not get symbol Token data:  ${(error as any)?.message}`)
       } else {
-        console.log('cmcmcmcmcmc', bytes32ToString(error?.value))
         return bytes32ToString(error?.value);
       }
     }

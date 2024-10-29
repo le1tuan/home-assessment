@@ -1,81 +1,26 @@
-import { getReserveData } from '@/contract';
-import { LATEST_FETCHED_RESERVE_DATA, RESERVE_DATA } from '@/utils/constants';
-import { delay } from '@/utils/delay';
-import { formatUnits, toBigInt } from 'ethers';
-import React, { useEffect, useState } from 'react';
+import { ReserveListItem } from '@/contract';
+import React, { useContext } from 'react';
 import Big from 'big.js';
 import { Box, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
-import { TokenData } from '@/page/ReserveData';
-import { convertDateToMinutes } from '@/utils/number';
+import { ErrorContext } from '@/context/ErrorContext';
+import { LoadingContext } from '@/context/LoadingContext';
 
 type Props = {
-  tokenSymbol: Array<any>
+  reserveData: Array<ReserveData>,
+  latestFetched: number
 }
 
-type ReserveData = TokenData & {
-  borrowRate: number
+type ReserveData = ReserveListItem & {
+  variableBorrowRate: number | string
 }
-
-const FETCH_INTERVAL_MINUTE = 5;
-
-const rawSavedReserveData = localStorage.getItem(RESERVE_DATA);
-const rawLatestFetched = localStorage.getItem(LATEST_FETCHED_RESERVE_DATA);
 
 export const DataTable = ({
-  tokenSymbol
+  reserveData,
+  latestFetched,
 }: Props) => {
 
-  const [reserveData, setReserveData] = useState(rawSavedReserveData ? JSON.parse(rawSavedReserveData) : []);
-  const [latestFetched, setLatestFetched] = useState(rawLatestFetched ? JSON.parse(rawLatestFetched) : '')
-
-  const handleFetchReserveData = async () => {
-    try {
-      const fetchedReserveData: Array<any> = [];
-      const promises = tokenSymbol.map(async (info) => {
-        if (info.address) {
-          await delay();
-          const result = await getReserveData(info.address);
-          const borrowRate = new Big(result[4]);
-          const RAY_DECIMALS = new Big("1" + "0".repeat(27));
-          const currentBorrowRate = borrowRate.div(RAY_DECIMALS);
-
-          return {
-            ...info,
-            borrowRate: currentBorrowRate.toFixed(5)
-          }
-        }
-      })
-      const results = await Promise.allSettled(promises);
-      results.forEach((result) => {
-        if (result.status === 'fulfilled') {
-          fetchedReserveData.push(result.value);
-        } else {
-          // errors.push(result.reason)
-          console.log(result.reason)
-        }
-      })
-      const dateNow = JSON.stringify(Date.now());
-      localStorage.setItem(RESERVE_DATA, JSON.stringify(fetchedReserveData))
-      localStorage.setItem(LATEST_FETCHED_RESERVE_DATA, JSON.stringify(dateNow));
-      setReserveData(fetchedReserveData);
-      setLatestFetched(dateNow)
-    } catch (error) {
-
-    }
-  }
-
-  useEffect(() => {
-    const savedReserveData = rawSavedReserveData ? JSON.parse(rawSavedReserveData) : '';
-    const dateNow = Date.now();
-    const duration = convertDateToMinutes(dateNow - (latestFetched || Date.now()));
-    console.log("ddd", duration)
-    if (tokenSymbol
-      && tokenSymbol.length > 0
-      && (!savedReserveData || duration > FETCH_INTERVAL_MINUTE)
-    ) {
-      handleFetchReserveData();
-    }
-  }, [tokenSymbol])
+  const { setError } = useContext(ErrorContext);
+  const { setLoading } = useContext(LoadingContext);
 
   return (
     <Box
@@ -86,9 +31,11 @@ export const DataTable = ({
         justifyContent: 'flex-start'
       }}
     >
-      <Typography gutterBottom variant="h4">AAVE Borrow Rate Data</Typography>
+      <Typography gutterBottom variant="h4" sx={{
+        textAlign: 'center'
+      }}>AAVE Borrow Rate Data</Typography>
       {
-        latestFetched && (
+        latestFetched ? (
           <Typography
             gutterBottom
           >
@@ -98,7 +45,7 @@ export const DataTable = ({
               second: "2-digit"
             })}
           </Typography>
-        )
+        ) : null
       }
       <TableContainer component={Paper} sx={{ maxWidth: 850 }}>
         <Table sx={{ minWidth: 450 }}>
@@ -115,7 +62,7 @@ export const DataTable = ({
           <TableBody>
             {
               reserveData.map((data: ReserveData) => {
-                const borrowRate = data?.borrowRate ? (data?.borrowRate * 100).toFixed(3) : 0
+                const borrowRate = data?.variableBorrowRate ? (data?.variableBorrowRate * 100).toFixed(3) : 0
                 return (
                   <TableRow
                     key={data.address}

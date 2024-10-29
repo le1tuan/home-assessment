@@ -18,10 +18,8 @@ export const useWallet = ({
       .request({ method: "eth_requestAccounts" })
       .catch((err) => {
         if (err.code === 4001) {
-          console.log("Please connect to MetaMask.")
           setError('User rejected the request.')
         } else {
-          console.error(err)
           setError('Can not connect to your wallet')
         }
       })
